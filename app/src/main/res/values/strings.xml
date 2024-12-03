@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Assessment04</string>
+
+    <string-array name="user_roles">
+        <item>Select Role</item>
+        <item>Passenger</item>
+        <item>Bus Owner</item>
+        <item>Bus Driver</item>
+    </string-array>
+
+    <string-array name="route_array">
+        <item>Select Route</item>
+        <item>Kandy-Colombo</item>
+        <item>Nittambuwa-Colombo</item>
+        <item>Colombo-Galle</item>
+    </string-array>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="title_activity_maps">MapsActivity</string>
+
+
+</resources>

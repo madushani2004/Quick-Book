@@ -1,8 +1,6 @@
 package com.example.assessment04;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,11 +19,15 @@ import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.assessment04.routedata.Route;
+import com.example.assessment04.data.Cancel;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class DriverDashboardActivity extends AppCompatActivity {
@@ -36,6 +38,8 @@ public class DriverDashboardActivity extends AppCompatActivity {
     private Button startTripButton, endTripButton;
 
     private String email; // Driver's email
+
+    private RecyclerView recyclerViewCancel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +75,7 @@ public class DriverDashboardActivity extends AppCompatActivity {
         passengerCountText = findViewById(R.id.passenger_count);
         startTripButton = findViewById(R.id.start_trip_button);
         endTripButton = findViewById(R.id.end_trip_button);
+        recyclerViewCancel = findViewById(R.id.recyclerViewCancel);
 
         // Load Assigned Bus Info
         loadAssignedBusDetails();
@@ -124,6 +129,13 @@ public class DriverDashboardActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+
+        DatabaseHelper helper = new DatabaseHelper(this);
+        List<Cancel> cancels = helper.getCancelRequests(helper.getAssignedBusForDriver(email));
+        CancelAdapter adapter = new CancelAdapter(this, cancels);
+        recyclerViewCancel.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewCancel.setAdapter(adapter);
     }
 
     private void loadAssignedBusDetails() {
@@ -133,7 +145,7 @@ public class DriverDashboardActivity extends AppCompatActivity {
         if (assignedBus != null) {
             busNameText.setText("Bus Name: " + assignedBus.getBusName());
             routeDetailsText.setText("Route: " + assignedBus.getRoute());
-            //passengerCountText.setText("Passengers: " + dbHelper.getPassengerCount(assignedBus.getBusNo()));
+            passengerCountText.setText("Passengers: " + dbHelper.getPassengerCount(assignedBus.getBusNo()));
         } else {
             busNameText.setText("Bus Name: None");
             routeDetailsText.setText("Route: None");

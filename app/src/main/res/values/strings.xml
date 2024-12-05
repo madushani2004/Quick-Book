@@ -18,6 +18,7 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="customer_asking_for_a_seat_change">%s asking for a seat change. Would you like to proceed?</string>
 
 
 </resources>

@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 public enum Route {
     ColomboToKandy(Station.ColomboFort, Station.Kandy),
     ColomboToGalle(Station.ColomboFort, Station.Galle),
-    ColomboToKadawatha(Station.ColomboFort, Station.Kadawatha),
     ColomboToKurunagala(Station.ColomboFort, Station.Kurunagala),
     ColomboToJaffna(Station.ColomboFort, Station.Jaffna);
     // Always add new Routes here;

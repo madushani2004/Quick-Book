@@ -24,10 +24,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.assessment04.routedata.TurnManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OwnerDashboardActivity extends AppCompatActivity {
@@ -164,7 +166,7 @@ public class OwnerDashboardActivity extends AppCompatActivity {
             recyclerView.setVisibility(View.VISIBLE);
             emptyView.setVisibility(View.GONE);
         }
-        adapter = new BusAdapter(busList, this);
+        adapter = new BusAdapter(busList, new ArrayList<>(),this);
         adapter.setOnDeleteListener(() -> {
             totalBusesTextView.setText(String.valueOf(dbHelper.getTotalBuses()));
             totalRoutesTextView.setText(String.valueOf(dbHelper.getTotalRoutes()));
@@ -211,7 +213,7 @@ public class OwnerDashboardActivity extends AppCompatActivity {
                 emptyView.setVisibility(View.GONE);
             }
 
-            adapter = new BusAdapter(busList, this);
+            adapter = new BusAdapter(busList, new ArrayList<>(), this);
             adapter.setOnDeleteListener(() -> {
                 totalBusesTextView.setText(String.valueOf(dbHelper.getTotalBuses()));
                 totalRoutesTextView.setText(String.valueOf(dbHelper.getTotalRoutes()));

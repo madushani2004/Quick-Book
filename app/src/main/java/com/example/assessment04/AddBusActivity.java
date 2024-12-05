@@ -1,6 +1,5 @@
 package com.example.assessment04;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -18,6 +17,7 @@ import com.example.assessment04.routedata.TurnManager;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AddBusActivity extends AppCompatActivity {
 
@@ -112,13 +112,8 @@ public class AddBusActivity extends AppCompatActivity {
         // Add the new bus
         buses.add(busNumber);
 
-        // Assign turns
-        TurnManager turnManager = new TurnManager();
-        LocalTime startTime = LocalTime.of(6, 0); // Example: Start schedule at 6:00 AM
-        turnManager.assignTurns(selectedRoute, buses, startTime);
-
         // Print or save the schedule for debugging or display purposes
-        turnManager.printSchedule(selectedRoute);
+//        turnManager.printSchedule(selectedRoute);
     }
 
     // Save Bus Data to SQLite
@@ -130,5 +125,12 @@ public class AddBusActivity extends AppCompatActivity {
         } else {
             Toast.makeText(AddBusActivity.this, "Failed to save bus details to SQLite", Toast.LENGTH_SHORT).show();
         }
+
+
+        // Assign turns
+        TurnManager turnManager = TurnManager.instance();
+        List<String> busesForRoute = dbHelper.getAllBuses().stream().map(Bus::getBusNo).collect(Collectors.toList()); //getBusesForRoute(selectedRoute);
+        LocalTime startTime = LocalTime.of(6, 0); // Example start time
+        turnManager.assignTurns(busesForRoute, startTime, dbHelper);
     }
 }

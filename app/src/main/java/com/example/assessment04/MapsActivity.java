@@ -4,14 +4,16 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 
-import com.example.assessment04.routedata.Route;
 import com.example.assessment04.routedata.Station;
+import com.example.assessment04.routedata.TurnManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.assessment04.databinding.ActivityMapsBinding;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -32,6 +34,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        // Retrieve Turns
+        TurnManager.instance().retrieveTurnsFromDB(this);
     }
 
     /**
@@ -58,12 +63,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Handle marker clicks to open the Bottom Sheet with buses
         mMap.setOnMarkerClickListener(marker -> {
-            String stationName = marker.getTitle();
-            Station selectedStation = getStationByName(stationName);
-            if (selectedStation != null) {
-                openBusBottomSheet(selectedStation);
+            String stationName = marker.getTitle(); // Assuming the title matches the station name
+            Station clickedStation = getStationByName(stationName);
+
+            if (clickedStation == null) {
+                Log.e("MapsActivity", "Station not found for marker: " + stationName);
+                return false;
             }
-            return true; // Indicate that the click has been handled
+
+            // Open the bottom sheet with the correct station
+            BusSelectionBottomSheet bottomSheet = BusSelectionBottomSheet.newInstance(clickedStation);
+            bottomSheet.show(getSupportFragmentManager(), "BusSelectionBottomSheet");
+
+            return true;
         });
     }
 

@@ -13,12 +13,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.example.assessment04.data.CurrentUser;
+import com.example.assessment04.data.Swap;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -30,6 +33,10 @@ public class PassengerDashboardActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
+    private CardView swapCardView;
+    private Button buttonAccept;
+    private Button buttonDecline;
+    private TextView content;
 
     private String email; // Passed from login
     @Override
@@ -47,6 +54,7 @@ public class PassengerDashboardActivity extends AppCompatActivity {
         dbHelper.insertRoutes(); // Ensure routes are inserted
 
         email = getIntent().getStringExtra("email");
+        CurrentUser.email = email;
 
         // Setup Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -57,6 +65,35 @@ public class PassengerDashboardActivity extends AppCompatActivity {
         // Setup DrawerLayout
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+
+        swapCardView = findViewById(R.id.swapCardView);
+        buttonAccept = findViewById(R.id.buttonAccept);
+        buttonDecline = findViewById(R.id.buttonDecline);
+        content = findViewById(R.id.textView2);
+
+        Swap swap = dbHelper.getSwapRequests(email);
+
+        if (swap != null) {
+            swapCardView.setVisibility(View.VISIBLE);
+            content.setText(
+                    String.format(
+                            getResources().getText(R.string.customer_asking_for_a_seat_change).toString(),
+                            (swap.requesterEmail != null)? swap.requesterEmail: "Passenger"
+                    )
+            );
+        }
+
+        buttonAccept.setOnClickListener(view -> {
+            dbHelper.swapSeats(swap, CurrentUser.email);
+            swapCardView.setVisibility(View.GONE);
+            Toast.makeText(this, "Swap successful!", Toast.LENGTH_SHORT).show();
+        });
+
+        buttonDecline.setOnClickListener(view -> {
+            dbHelper.declineSwap(swap);
+            swapCardView.setVisibility(View.GONE);
+            Toast.makeText(this, "Swap declined!", Toast.LENGTH_SHORT).show();
+        });
 
         updateHeaderEmail(email);
 

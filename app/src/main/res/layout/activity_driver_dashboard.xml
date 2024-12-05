@@ -32,7 +32,9 @@
                 android:title="Driver Dashboard"
                 android:titleTextColor="@android:color/white" />
 
+
             <!-- Assigned Bus Card -->
+
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -72,6 +74,7 @@
                         android:textSize="16sp"
                         android:layout_marginTop="8dp"
                         android:textColor="@color/gray" />
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -103,6 +106,11 @@
                     android:enabled="false" />
             </LinearLayout>
 
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewCancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <!-- Navigation Drawer -->

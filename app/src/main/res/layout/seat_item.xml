@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvSeatNumber"
+    android:layout_width="@dimen/seat_size"
+    android:layout_height="@dimen/seat_size"
+    android:gravity="center"
+    android:background="@android:color/transparent"
+    android:layout_margin="4dp"/>

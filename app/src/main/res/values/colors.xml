@@ -10,4 +10,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="gray">#808080</color>
     <color name="error_red">#FF0000</color>
+
+    <color name="seat_available">@color/gray</color>
+    <color name="seat_booked">@color/lavender</color>
+    <color name="seat_yours">#FFBA8E23</color>
+    <color name="seat_selected">#00BCD4</color>
 </resources>

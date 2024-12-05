@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Focused state -->
+    <item android:state_focused="true">
+        <shape>
+            <solid android:color="@android:color/transparent"/>
+            <stroke
+                android:color="@color/lavender"
+                android:width="2dp"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+
+    <!-- Default state (not focused) -->
+    <item>
+        <shape>
+            <solid android:color="@android:color/transparent"/>
+            <stroke
+                android:color="@color/gray"
+                android:width="2dp"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+</selector>

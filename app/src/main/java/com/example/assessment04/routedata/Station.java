@@ -9,7 +9,6 @@ public enum Station {
     Kandy("Kandy", new LatLng(7.291418, 80.636696)),
     Jaffna("Jaffna", new LatLng(9.6615, 80.0255)),
     Galle("Galle", new LatLng(6.0329, 80.2168)),
-    Kadawatha("Kadawatha", new LatLng(7.0047, 79.9542)),
     Kurunagala("Kurunagala", new LatLng(7.4818, 80.3609));
 
     private final String name;

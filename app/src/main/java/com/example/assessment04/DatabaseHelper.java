@@ -10,17 +10,23 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.example.assessment04.data.Cancel;
+import com.example.assessment04.data.Swap;
 import com.example.assessment04.routedata.Route;
 import com.example.assessment04.routedata.Station;
+import com.example.assessment04.routedata.TurnManager;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+
+@SuppressLint("Range")
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "BusBooking.db";
     private static final int DATABASE_VERSION = 1;
-
     // User Table
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_ID = "id";
@@ -50,6 +56,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_TO_STATION = "to_station";
 
 
+    // Define the Turn Table
+    public static final String TABLE_TURNS = "turns";
+    public static final String COLUMN_TURN_ID = "turn_id";
+    public static final String COLUMN_TURN_ROUTE_CODE = "route_code";
+    public static final String COLUMN_TURN_BUS_NO = "bus_no";
+    public static final String COLUMN_TURN_DEPARTURE_TIME = "departure_time";
+
+    // Define the book Table
+    public static final String TABLE_BOOK = "book";
+    public static final String COLUMN_BOOK_ID = "book_id";
+    public static final String COLUMN_BUS_NUMBER = "bus_number";
+    public static final String COLUMN_BOOK_CANCEL = "cancel";
+    public static final String COLUMN_SWAP_WITH = "swap_with";
+    public static final String COLUMN_USER_MAIL = "user_mail";
+    public static final String SEAT_NO = "seat_no";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -91,6 +112,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createRoutesTable);
 
 
+        // Create Turn Table
+        String createTurnTable = "CREATE TABLE " + TABLE_TURNS + " (" +
+                COLUMN_TURN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TURN_ROUTE_CODE + " INTEGER NOT NULL, " +
+                COLUMN_TURN_BUS_NO + " TEXT NOT NULL, " +
+                COLUMN_TURN_DEPARTURE_TIME + " TEXT NOT NULL, " +
+                "FOREIGN KEY(" + COLUMN_TURN_ROUTE_CODE + ") REFERENCES " + TABLE_ROUTES + "(" + COLUMN_ROUTE_CODE + "), " +
+                "FOREIGN KEY(" + COLUMN_TURN_BUS_NO + ") REFERENCES " + TABLE_BUSES + "(" + COLUMN_BUSNO + "))";
+        db.execSQL(createTurnTable);
+
+        // Create Book Table
+        String createBookTable = "CREATE TABLE " + TABLE_BOOK + " (" +
+                COLUMN_BOOK_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_BUS_NUMBER + " TEXT NOT NULL, " +
+                COLUMN_USER_MAIL+ " TEXT NOT NULL, " +
+                SEAT_NO + " INTEGER NOT NULL," +
+                COLUMN_BOOK_CANCEL + " BOOLEAN DEFAULT 0, " +
+                COLUMN_SWAP_WITH + " TEXT) ";
+        db.execSQL(createBookTable);
 
     }
 
@@ -100,6 +140,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_BUSES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROFILE);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ROUTES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TURNS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_BOOK);
         onCreate(db);
     }
 
@@ -144,13 +186,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_ROUTE_CODE, Route.ColomboToGalle.getRouteCode());
         values.put(COLUMN_FROM_STATION, Route.ColomboToGalle.getFrom().getName());
         values.put(COLUMN_TO_STATION, Route.ColomboToGalle.getTo().getName());
-        db.insert(TABLE_ROUTES, null, values);
-
-        values.clear();
-
-        values.put(COLUMN_ROUTE_CODE, Route.ColomboToKadawatha.getRouteCode());
-        values.put(COLUMN_FROM_STATION, Route.ColomboToKadawatha.getFrom().getName());
-        values.put(COLUMN_TO_STATION, Route.ColomboToKadawatha.getTo().getName());
         db.insert(TABLE_ROUTES, null, values);
 
         values.clear();
@@ -238,8 +273,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-
-
     // Get Profile
     public Cursor getProfileFor(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -294,7 +327,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return username;
     }
-
 
 
     public boolean updateBus(String busNo, String busName, int route, String driverName) {
@@ -445,8 +477,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-
-
     public List<Bus> getBusesForStation(Station station) {
         SQLiteDatabase db = this.getReadableDatabase();
         List<Bus> buses = new ArrayList<>();
@@ -486,7 +516,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return buses;
     }
-
 
 
     public List<Route> getAllRoutes() {
@@ -530,8 +559,309 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    public List<TurnManager.Turn> getTurnsForRoute(Route route) {
+        List<TurnManager.Turn> turns = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
 
+        String query = "SELECT " + COLUMN_TURN_BUS_NO + ", " + COLUMN_TURN_DEPARTURE_TIME +
+                " FROM " + TABLE_TURNS +
+                " WHERE " + COLUMN_TURN_ROUTE_CODE + "=?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(route.getRouteCode())});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String busNo = cursor.getString(cursor.getColumnIndex(COLUMN_TURN_BUS_NO));
+                String departureTime = cursor.getString(cursor.getColumnIndex(COLUMN_TURN_DEPARTURE_TIME));
+                turns.add(new TurnManager.Turn(busNo, LocalTime.parse(departureTime), route));
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return turns;
+    }
+
+    public Route getRouteFor(String busNumber) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT " + COLUMN_ROUTE_CODE + " FROM " + TABLE_BUSES + " WHERE " + COLUMN_BUSNO + "=?";
+        Cursor cursor = db.rawQuery(query, new String[]{busNumber});
+        if (cursor.moveToFirst()) {
+            int routeCode = cursor.getInt(cursor.getColumnIndex(COLUMN_ROUTE_CODE));
+            return Route.routeFrom(routeCode);
+        }
+        return null;
+    }
+
+    // Method to clear all records from a specific table
+    public void clearTurnTable() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM " + TABLE_TURNS);
+        db.close();
+    }
+
+    public List<TurnManager.Turn> retrieveTurns() {
+        SQLiteDatabase db = getWritableDatabase();
+        String query = "SELECT * FROM " + TABLE_TURNS;
+        Cursor cursor = db.rawQuery(query, new String[]{});
+        ArrayList<TurnManager.Turn> turns = new ArrayList<>();
+
+        if (cursor.moveToFirst()) {
+            do {
+                String busNumber = cursor.getString(cursor.getColumnIndex(COLUMN_TURN_BUS_NO));
+                LocalTime departureTime = LocalTime.parse(
+                        cursor.getString(cursor.getColumnIndex(COLUMN_TURN_DEPARTURE_TIME)),
+                        DateTimeFormatter.ISO_LOCAL_TIME
+                );
+                Route route = Route.routeFrom(
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_TURN_BUS_NO))
+                );
+
+                TurnManager.Turn turn = new TurnManager.Turn(busNumber, departureTime, route);
+                turns.add(turn);
+            } while (cursor.moveToNext());
+        }
+
+        return turns;
+    }
+
+    public List<Integer> getBookedSeats(String busNumber) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        List<Integer> bookedSeats = new ArrayList<>();
+
+        // Query to fetch booked seats for a specific bus
+        String query = "SELECT " + SEAT_NO + " FROM " + TABLE_BOOK +
+                " WHERE " + COLUMN_BUS_NUMBER + " = ?";
+
+        Cursor cursor = db.rawQuery(query, new String[]{busNumber});
+
+        if (cursor.moveToFirst()) {
+            do {
+                // Add each seat number to the list
+                int seatNo = cursor.getInt(cursor.getColumnIndex(SEAT_NO));
+                bookedSeats.add(seatNo);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return bookedSeats;
+    }
+
+    public List<Integer> getPassengerBookedSeats(String busNumber, String userEmail) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        List<Integer> bookedSeats = new ArrayList<>();
+
+        // Query to fetch booked seats for a specific passenger and bus
+        String query = "SELECT " + SEAT_NO + " FROM " + TABLE_BOOK +
+                " WHERE " + COLUMN_BUS_NUMBER + " = ? AND " + COLUMN_USER_MAIL + " = ?";
+
+        Cursor cursor = db.rawQuery(query, new String[]{busNumber, userEmail});
+
+        if (cursor.moveToFirst()) {
+            do {
+                // Add each seat number to the list
+                int seatNo = cursor.getInt(cursor.getColumnIndex(SEAT_NO));
+                bookedSeats.add(seatNo);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return bookedSeats;
+    }
+
+
+    public boolean insertOrUpdateBooking(String busNumber, String userEmail, int seatNo) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // Insert or update values
+        values.put(COLUMN_BUS_NUMBER, busNumber);
+        values.put(COLUMN_USER_MAIL, userEmail);
+        values.put(SEAT_NO, seatNo);
+        values.put(COLUMN_BOOK_CANCEL, false);  // Set the cancel status
+        values.put(COLUMN_SWAP_WITH, (String) null);  // Set the swap_with passenger (null if no swap)
+
+        // Insert with conflict resolution (replace if exists)
+        long result = db.insertWithOnConflict(TABLE_BOOK, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+
+        db.close();
+
+        // Return true if the insert/update was successful
+        return result != -1;
+    }
+
+    public boolean requestCancelBooking(String busNumber, String userEmail) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // Set the cancel column to true (1)
+        values.put("cancel", true);
+
+        int rowsAffected = db.update(TABLE_BOOK, values, COLUMN_BUS_NUMBER + "=? AND " + COLUMN_USER_MAIL + "=?",
+                new String[]{busNumber, userEmail});
+
+        db.close();
+        return rowsAffected > 0;  // Return true if any row was affected
+    }
+
+    public boolean requestSwapSeats(String busNumber, String selfEmail, int swapSeat) {
+        String userEmail2 = getUserEmail(busNumber, swapSeat);
+
+        if (selfEmail == null && userEmail2 == null)
+            return false;
+
+            // Get the seat numbers for both passengers
+        int seatNo1 = getSeatNumber(busNumber, selfEmail);
+        int seatNo2 = swapSeat;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values1 = new ContentValues();
+
+        // Set the swap_with column for both passengers
+        values1.put(COLUMN_SWAP_WITH, selfEmail);
+
+        // Update the swap_with column for both passengers
+        db.update(TABLE_BOOK, values1, COLUMN_BUS_NUMBER + "=? AND " + COLUMN_USER_MAIL + "=? AND " + SEAT_NO + "=?",
+                new String[]{busNumber, userEmail2, String.valueOf(seatNo2)});
+
+        db.close();
+        return true;
+    }
+
+    public void swapSeats(Swap swap, String selfEmail) {
+
+        int seatNo2 = getSeatNumber(swap.busNo, swap.requesterEmail);
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values1 = new ContentValues();
+        ContentValues values2 = new ContentValues();
+
+        // Set the swap_with column for both passengers
+        values1.put(COLUMN_USER_MAIL, selfEmail);
+        values2.put(COLUMN_USER_MAIL, swap.requesterEmail);
+
+
+        values1.put(COLUMN_SWAP_WITH, (String) null);
+        values2.put(COLUMN_SWAP_WITH, (String) null);
+
+        // Update the swap_with column for both passengers
+        db.update(TABLE_BOOK, values1, COLUMN_BUS_NUMBER + "=? AND " + SEAT_NO + "=?",
+                new String[]{swap.busNo, String.valueOf(swap.seatNo)});
+
+        db.update(TABLE_BOOK, values2, COLUMN_BUS_NUMBER + "=? AND " + SEAT_NO + "=?",
+                new String[]{swap.busNo, String.valueOf(seatNo2)});
+
+        db.close();
+    }
+
+    public int getSeatNumber(String busNumber, String userEmail) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + SEAT_NO + " FROM " + TABLE_BOOK + " WHERE " +
+                        COLUMN_BUS_NUMBER + "=? AND " + COLUMN_USER_MAIL + "=?",
+                new String[]{busNumber, userEmail});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int seatNo = cursor.getInt(cursor.getColumnIndex(SEAT_NO));
+            cursor.close();
+            db.close();
+            return seatNo;
+        } else {
+            cursor.close();
+            db.close();
+            return -1;  // No booking found
+        }
+    }
+
+    public String getUserEmail(String busNumber, int seatNumber) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_USER_MAIL + " FROM " + TABLE_BOOK + " WHERE " +
+                        COLUMN_BUS_NUMBER + "=? AND " + SEAT_NO + "=?",
+                new String[]{busNumber, String.valueOf(seatNumber)});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            String email = cursor.getString(cursor.getColumnIndex(COLUMN_USER_MAIL));
+            cursor.close();
+            db.close();
+            return email;
+        } else {
+            cursor.close();
+            db.close();
+            return null;  // No booking found
+        }
+    }
+
+    public Swap getSwapRequests(String userEmail) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT *  FROM " + TABLE_BOOK + " WHERE " +
+                        COLUMN_USER_MAIL + "=? AND " + COLUMN_SWAP_WITH + " IS NOT NULL LIMIT 1",
+                new String[]{userEmail});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            String requesterEmail = cursor.getString(cursor.getColumnIndex(COLUMN_SWAP_WITH));
+            String busNo = cursor.getString(cursor.getColumnIndex(COLUMN_BUS_NUMBER));
+            int seatNo = cursor.getInt(cursor.getColumnIndex(SEAT_NO));
+
+            return new Swap(requesterEmail, busNo, seatNo);
+        }
+
+        return null;
+    }
+
+    public void declineSwap(Swap swap) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COLUMN_SWAP_WITH, (String) null);
+
+        db.update(TABLE_BOOK, values, SEAT_NO + "=? ", new String[]{String.valueOf(swap.seatNo)});
+
+        db.close();
+    }
+
+    public int getPassengerCount(String busNo) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_BOOK + " WHERE " + COLUMN_BUS_NUMBER + "=?", new String[]{busNo});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            return cursor.getInt(0);
+        }
+        return -1;
+    }
+
+    public List<Cancel> getCancelRequests(Bus assignedBusForDriver) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_BOOK + " WHERE " + COLUMN_BUS_NUMBER + "=? AND " + COLUMN_BOOK_CANCEL + "=?", new String[]{assignedBusForDriver.getBusNo(), String.valueOf(1)});
+        List<Cancel> cancels = new ArrayList<>();
+
+
+        if (cursor.moveToFirst()) {
+            do {
+                String passenger = cursor.getString(cursor.getColumnIndex(COLUMN_USER_MAIL));
+                int seatNo = cursor.getInt(cursor.getColumnIndex(SEAT_NO));
+                cancels.add(new Cancel(passenger, seatNo));
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return cancels;
+    }
+
+    public void cancelBooking(int seatNo) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_BOOK, SEAT_NO + "=? ", new String[]{String.valueOf(seatNo)});
+        db.close();
+    }
+
+    public void declineCancelBooking(int seatNo) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COLUMN_BOOK_CANCEL, false);
+
+        db.update(TABLE_BOOK, values, SEAT_NO + "=? ", new String[]{String.valueOf(seatNo)});
+        db.close();
+    }
 }
-
-
 
